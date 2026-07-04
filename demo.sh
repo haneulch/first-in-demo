@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
-# demo.sh — 재고 100개인 이벤트에 동시 1,000건 접수 → 당첨 정확히 100명, 중복 0건 확인
+# demo.sh — 재고 100개 이벤트 생성 후 동시 1,000건 접수 → 당첨 정확히 100명, 중복 0건 확인
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
-EVENT_ID="${1:-demo-event}"
+EVENT_ID="${1:-demo-$(date +%s)}"
+STOCK=100
 TOTAL=1000
 CONCURRENCY=200
+
+echo "▶ 이벤트 생성 (eventId=${EVENT_ID}, 당첨자 수=${STOCK})"
+curl -s -X POST "${BASE_URL}/events" \
+  -H 'Content-Type: application/json' \
+  -d "{\"eventId\":\"${EVENT_ID}\",\"stock\":${STOCK}}"
+echo
 
 echo "▶ 동시 접수: ${TOTAL}건 (동시성 ${CONCURRENCY}, eventId=${EVENT_ID})"
 seq 1 "$TOTAL" | xargs -P "$CONCURRENCY" -I {} \
@@ -26,11 +33,11 @@ WINNER_COUNT=$(echo "$WINNERS" | grep -o '"userId"' | wc -l | tr -d ' ')
 DUP_COUNT=$(echo "$WINNERS" | grep -o '"userId":"[^"]*"' | sort | uniq -d | wc -l | tr -d ' ')
 
 echo "▶ 결과"
-echo "  당첨자 수: ${WINNER_COUNT} (기대: 100)"
+echo "  당첨자 수: ${WINNER_COUNT} (기대: ${STOCK})"
 echo "  중복 당첨: ${DUP_COUNT}건 (기대: 0)"
 
-if [ "$WINNER_COUNT" -eq 100 ] && [ "$DUP_COUNT" -eq 0 ]; then
-  echo "✅ 성공: 정확히 100명, 중복 0건"
+if [ "$WINNER_COUNT" -eq "$STOCK" ] && [ "$DUP_COUNT" -eq 0 ]; then
+  echo "✅ 성공: 정확히 ${STOCK}명, 중복 0건"
 else
   echo "❌ 실패"
   exit 1

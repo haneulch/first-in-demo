@@ -1,6 +1,7 @@
 package com.firstindemo.result;
 
 import com.firstindemo.code.Status;
+import com.firstindemo.event.EventService;
 import com.firstindemo.judge.WinnerRepository;
 import com.firstindemo.result.message.ResultResponse;
 import com.hazelcast.core.HazelcastInstance;
@@ -29,12 +30,14 @@ import static org.assertj.core.api.Assertions.assertThat;
   "spring.datasource.driver-class-name=org.h2.Driver",
   // FirstInFlowTest와 동일 설정 유지 — 컨텍스트 재사용
   "spring.cloud.stream.bindings.applyIn-in-0.destination=apply-queue-test-inbox",
-  "firstin.stock=100",
   "firstin.gate-multiplier=3"
 })
 class ResultServiceFallbackTest {
 
   private static final int STOCK = 100;
+
+  @Autowired
+  private EventService eventService;
 
   @Autowired
   private ResultService resultService;
@@ -49,6 +52,7 @@ class ResultServiceFallbackTest {
   @Test
   void 캐시_유실후_당첨자는_DB_fallback으로_WIN_반환_및_재캐싱() {
     String eventId = "fb-win-event";
+    eventService.create(eventId, STOCK);
     winnerRepository.batchInsert(eventId, List.of("winner-1"));
 
     // 재시작 모사: 결과 캐시 유실
@@ -67,6 +71,7 @@ class ResultServiceFallbackTest {
   @Test
   void 캐시_유실후_재고_소진이면_비당첨자에게_LOSE_반환_및_캐싱() {
     String eventId = "fb-lose-event";
+    eventService.create(eventId, STOCK);
     winnerRepository.batchInsert(eventId, users(STOCK)); // 재고 전량 소진
 
     ResultResponse response = resultService.getResult(eventId, "not-a-winner");
@@ -82,6 +87,7 @@ class ResultServiceFallbackTest {
   @Test
   void 판정_미완료면_PENDING과_retryAfter를_반환한다() {
     String eventId = "fb-pending-event";
+    eventService.create(eventId, STOCK);
     winnerRepository.batchInsert(eventId, users(10)); // 재고 미소진
 
     ResultResponse response = resultService.getResult(eventId, "still-waiting");

@@ -1,13 +1,13 @@
 package com.firstindemo.result;
 
 import com.firstindemo.code.Status;
+import com.firstindemo.event.EventService;
 import com.firstindemo.judge.WinnerRepository;
 import com.firstindemo.result.dto.EventStatus;
 import com.firstindemo.result.dto.EventWinner;
 import com.firstindemo.result.message.ResultResponse;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,14 +21,14 @@ public class ResultService {
 
   private final IMap<String, String> resultCache;
   private final WinnerRepository winnerRepository;
-  private final int stock;
+  private final EventService eventService;
 
   public ResultService(HazelcastInstance hz,
                        WinnerRepository winnerRepository,
-                       @Value("${firstin.stock}") int stock) {
+                       EventService eventService) {
     this.resultCache = hz.getMap("result-cache");
     this.winnerRepository = winnerRepository;
-    this.stock = stock;
+    this.eventService = eventService;
   }
 
   /**
@@ -58,7 +58,8 @@ public class ResultService {
       return ResultResponse.win();
     }
 
-    // 재고 소진 여부로 LOSE/PENDING 판단
+    // 재고 소진 여부로 LOSE/PENDING 판단 (이벤트가 없으면 404)
+    int stock = eventService.getStockOrThrow(eventId);
     long winners = winnerRepository.countWinners(eventId);
     if (winners >= stock) {
       resultCache.put(cacheKey, "LOSE");
@@ -77,6 +78,7 @@ public class ResultService {
    * @return 현재 당첨자
    */
   public List<EventWinner> getWinners(String eventId) {
+    eventService.getStockOrThrow(eventId); // 이벤트가 없으면 404
     List<String> winners = winnerRepository.getWinners(eventId);
     return EventWinner.of(winners);
   }
@@ -88,6 +90,7 @@ public class ResultService {
    * @return 판정 완료 여부와 현재 당첨자 수
    */
   public EventStatus getEventStatus(String eventId) {
+    int stock = eventService.getStockOrThrow(eventId);
     long winners = winnerRepository.countWinners(eventId);
     boolean completed = winners >= stock;
     return new EventStatus(eventId, stock, winners, completed);

@@ -41,8 +41,8 @@ spring:
               batch-size: 300
 
 # --- 이벤트 설정 ---
+# 당첨자 수(stock)는 이벤트별로 POST /events에서 지정한다
 firstin:
-  stock: 100
   gate-multiplier: 3
 
   # --- Hazelcast 설정 ---

@@ -1,3 +1,10 @@
+-- 이벤트 테이블: 이벤트별 당첨자 수(stock) 정의
+CREATE TABLE IF NOT EXISTS event (
+    event_id   VARCHAR(64)  PRIMARY KEY,
+    stock      INT          NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
 -- 원장 테이블: 당첨 기록
 CREATE TABLE IF NOT EXISTS winner (
     id         BIGSERIAL    PRIMARY KEY,

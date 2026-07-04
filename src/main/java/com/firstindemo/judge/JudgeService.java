@@ -1,11 +1,11 @@
 package com.firstindemo.judge;
 
+import com.firstindemo.event.EventService;
 import com.firstindemo.messaging.ApplyMessage;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,15 +24,15 @@ public class JudgeService {
   private static final Logger log = LoggerFactory.getLogger(JudgeService.class);
 
   private final WinnerRepository winnerRepository;
+  private final EventService eventService;
   private final IMap<String, String> resultCache;
-  private final int stock;
 
   public JudgeService(WinnerRepository winnerRepository,
-                      HazelcastInstance hz,
-                      @Value("${firstin.stock}") int stock) {
+                      EventService eventService,
+                      HazelcastInstance hz) {
     this.winnerRepository = winnerRepository;
+    this.eventService = eventService;
     this.resultCache = hz.getMap("result-cache");
-    this.stock = stock;
   }
 
   /**
@@ -51,6 +51,13 @@ public class JudgeService {
     }
 
     String eventId = messages.getFirst().eventId();
+
+    // 이벤트별 당첨자 수(stock) 조회 — 이벤트가 없으면 판정 불가, 배치 폐기
+    Integer stock = eventService.findStock(eventId).orElse(null);
+    if (stock == null) {
+      log.warn("존재하지 않는 이벤트의 메시지 {}건 폐기: eventId={}", messages.size(), eventId);
+      return;
+    }
 
     // 기존 당첨자 조회 — 재전달·연타 중복 메시지 식별용
     Set<String> existingWinners = new HashSet<>(winnerRepository.getWinners(eventId));

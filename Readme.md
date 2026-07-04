@@ -13,7 +13,7 @@ docker compose -f src/main/resources/compose.yaml up -d --build
 ```
 
 ```bash
-./demo.sh   # 동시 1,000건 요청 → 당첨 정확히 100명, 중복 0건 확인
+./demo.sh   # 재고 100개 이벤트 생성 → 동시 1,000건 요청 → 당첨 정확히 100명, 중복 0건 확인
 ```
 
 RabbitMQ 관리 UI(http://localhost:15672, guest/guest)를 열어두면 부하 유입 시 큐가 차올랐다가 워커가 소비하며 비워지는 과정을 눈으로 볼 수 있습니다.
@@ -109,12 +109,21 @@ RabbitMQ를 Spring AMQP로 직접 다루는 대신 Spring Cloud Stream의 함수
 
 ## API
 
-| 메서드  | 경로                           | 설명                                            |
-|------|------------------------------|-----------------------------------------------|
-| POST | `/events/{eventId}/apply`    | 접수. 게이트 통과 시 `202 QUEUED`, 마감 시 `SOLD_OUT`    |
-| GET  | `/events/{eventId}/result`   | 개인 결과. `WIN` / `LOSE` / `PENDING(retryAfter)` |
-| GET  | `/events/{eventId}/status`   | 이벤트 공유 상태 (판정 진행 중 / 완료, 현재 당첨자 수)            |
-| GET  | `/events/{eventId}/winners`  | 이벤트 당첨자 목록                                    |
+| 메서드  | 경로                           | 설명                                                |
+|------|------------------------------|---------------------------------------------------|
+| POST | `/events`                    | 이벤트 생성. 당첨자 수(`stock`) 지정, `eventId` 생략 시 자동 생성   |
+| POST | `/events/{eventId}/apply`    | 접수. 게이트 통과 시 `202 QUEUED`, 마감 시 `SOLD_OUT`        |
+| GET  | `/events/{eventId}/result`   | 개인 결과. `WIN` / `LOSE` / `PENDING(retryAfter)`     |
+| GET  | `/events/{eventId}/status`   | 이벤트 공유 상태 (판정 진행 중 / 완료, 현재 당첨자 수)                |
+| GET  | `/events/{eventId}/winners`  | 이벤트 당첨자 목록                                        |
+
+이벤트는 사전에 `POST /events`로 생성하며, 당첨자 수(`stock`)를 이벤트별로 지정합니다. 모든 에러는 `{"code": "EVENT_NOT_FOUND", "message": "..."}` 형태로 내려가며, 코드와 HTTP 상태는 `ErrorCode` enum에서 관리합니다 (`EVENT_NOT_FOUND` 404, `DUPLICATE_EVENT` 409, `INVALID_STOCK` 400).
+
+```bash
+curl -X POST http://localhost:8080/events \
+  -H 'Content-Type: application/json' \
+  -d '{"eventId": "summer-sale", "stock": 100}'
+```
 
 ## 디렉토리 구조
 
@@ -122,11 +131,12 @@ RabbitMQ를 Spring AMQP로 직접 다루는 대신 Spring Cloud Stream의 함수
 
 ```
 com.firstindemo
+├── event/        이벤트 — 생성 API, 이벤트별 당첨자 수(stock) 조회 (캐시 + DB fallback)
 ├── apply/        접수 — 컨트롤러, 게이트(AdmissionGate), 큐 발행
 ├── judge/        판정 — 배치 컨슈머, 판정 로직, 원장 저장
 ├── result/       조회 — 결과 API, 캐시 조회 + DB fallback
 ├── messaging/    apply와 judge가 공유하는 메시지 계약
-├── code/         공용 상태 코드 (WIN / LOSE / PENDING)
+├── code/         공용 코드 — 도메인 상태(WIN/LOSE/PENDING), 에러 코드(ErrorCode), 전역 예외 처리
 └── infra/        Hazelcast 설정, 기동 시 카운터 복구
 ```
 

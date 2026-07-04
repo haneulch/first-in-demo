@@ -2,6 +2,7 @@ package com.firstindemo;
 
 import com.firstindemo.apply.ApplyService;
 import com.firstindemo.code.Status;
+import com.firstindemo.event.EventService;
 import com.firstindemo.judge.JudgeService;
 import com.firstindemo.judge.WinnerRepository;
 import com.firstindemo.messaging.ApplyMessage;
@@ -43,12 +44,14 @@ import static org.assertj.core.api.Assertions.assertThat;
   "spring.datasource.driver-class-name=org.h2.Driver",
   // 테스트 바인더가 발행 메시지를 배치 컨슈머로 루프백하지 않도록 입력 destination 분리
   "spring.cloud.stream.bindings.applyIn-in-0.destination=apply-queue-test-inbox",
-  "firstin.stock=100",
   "firstin.gate-multiplier=3"
 })
 class FirstInFlowTest {
 
   private static final int STOCK = 100;
+
+  @Autowired
+  private EventService eventService;
 
   @Autowired
   private ApplyService applyService;
@@ -69,6 +72,7 @@ class FirstInFlowTest {
   @Test
   void 만건_접수시_게이트_300명_통과_당첨_100명() throws Exception {
     String eventId = "flow-event";
+    eventService.create(eventId, STOCK);
     int totalRequests = 10_000;
 
     // ── 1단계: 10,000건 동시 접수 ──────────────────────────
@@ -136,6 +140,7 @@ class FirstInFlowTest {
   @Test
   void 당첨자는_큐_도착_순서_기준_앞_100명이다() {
     String eventId = "order-event";
+    eventService.create(eventId, STOCK);
 
     // 300건이 큐 도착 순서대로 판정된다
     judgeService.judgeBatch(messages(eventId, 0, 300));
@@ -157,6 +162,7 @@ class FirstInFlowTest {
   @Test
   void 동일_메시지_재전달시_중복_당첨_없고_기당첨자_결과_유지() {
     String eventId = "redelivery-event";
+    eventService.create(eventId, STOCK);
     List<ApplyMessage> batch = messages(eventId, 0, 300);
 
     judgeService.judgeBatch(batch);
@@ -181,6 +187,7 @@ class FirstInFlowTest {
   @Test
   void 기당첨자_중복_메시지는_재고_슬롯을_소모하지_않는다() {
     String eventId = "slot-event";
+    eventService.create(eventId, STOCK);
 
     // 1차 배치: user-0 ~ user-49 당첨 (재고 50 소진)
     judgeService.judgeBatch(messages(eventId, 0, 50));
@@ -202,6 +209,7 @@ class FirstInFlowTest {
   @Test
   void 동일_사용자_연타시_1건만_유효() {
     String eventId = "spam-event";
+    eventService.create(eventId, STOCK);
 
     // 연타 사용자 1명(5회) + 신규 199명 = 총 204건
     List<ApplyMessage> batch = new ArrayList<>();

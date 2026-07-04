@@ -1,6 +1,7 @@
 package com.firstindemo.infra;
 
 import com.firstindemo.apply.AdmissionGate;
+import com.firstindemo.event.EventService;
 import com.hazelcast.core.HazelcastInstance;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,12 +27,15 @@ import static org.assertj.core.api.Assertions.assertThat;
   "spring.datasource.driver-class-name=org.h2.Driver",
   // FirstInFlowTest와 동일 설정 유지 — 컨텍스트 재사용
   "spring.cloud.stream.bindings.applyIn-in-0.destination=apply-queue-test-inbox",
-  "firstin.stock=100",
   "firstin.gate-multiplier=3"
 })
 class CounterRecoveryTest {
 
+  private static final int STOCK = 100;
   private static final int GATE_LIMIT = 300; // stock 100 × multiplier 3
+
+  @Autowired
+  private EventService eventService;
 
   @Autowired
   private CounterRecovery counterRecovery;
@@ -49,6 +53,7 @@ class CounterRecoveryTest {
   @Test
   void 재시작시_apply_log_건수로_게이트_카운터를_복구한다() {
     String eventId = "recovery-full-event";
+    eventService.create(eventId, STOCK);
     insertApplyLogs(eventId, GATE_LIMIT);
 
     // 재시작 모사: 인메모리 카운터 유실
@@ -70,6 +75,7 @@ class CounterRecoveryTest {
   @Test
   void 복구된_카운터가_한도_미만이면_잔여분만_통과시킨다() {
     String eventId = "recovery-partial-event";
+    eventService.create(eventId, STOCK);
     insertApplyLogs(eventId, GATE_LIMIT - 1);
 
     hz.getMap("gate-counter").remove(eventId);
