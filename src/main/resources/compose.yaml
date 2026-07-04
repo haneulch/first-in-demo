@@ -1,15 +1,29 @@
+# 프로젝트명 고정 — 컨테이너 이름(firstin-app-1, firstin-app-2)이 결정적이어야
+# Hazelcast 멤버 목록으로 쓸 수 있다
+name: firstin
+
 services:
+  # 로드밸런서 — app 레플리카에 라운드로빈 분산 (--scale app=2 시연용)
+  lb:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+
   app:
     build:
       context: ../../..
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/firstin
       SPRING_DATASOURCE_USERNAME: firstin
       SPRING_DATASOURCE_PASSWORD: firstin
+      # Hazelcast 멤버 목록: 레플리카 컨테이너 이름 (미기동 멤버는 무시됨)
+      FIRSTIN_HAZELCAST_MEMBERS: firstin-app-1,firstin-app-2
     depends_on:
       rabbitmq:
         condition: service_healthy
