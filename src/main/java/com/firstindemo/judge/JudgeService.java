@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 판정 서비스.
@@ -37,6 +40,9 @@ public class JudgeService {
    * 현재 당첨자 수를 기준으로 재고 내 메시지만 당첨 처리하고,
    * 나머지는 낙첨 처리한다.
    *
+   * <p>재전달·연타로 이미 당첨된 사용자의 중복 메시지는 재고를 소모하지 않고,
+   * 기존 WIN 결과를 LOSE로 덮어쓰지 않는다.</p>
+   *
    * @param messages 배치로 소비된 메시지 목록 (큐 도착 순서 보장)
    */
   public void judgeBatch(List<ApplyMessage> messages) {
@@ -46,19 +52,28 @@ public class JudgeService {
 
     String eventId = messages.getFirst().eventId();
 
-    // 현재 당첨자 수 조회
-    long currentWinners = winnerRepository.countWinners(eventId);
-    long remaining = stock - currentWinners;
+    // 기존 당첨자 조회 — 재전달·연타 중복 메시지 식별용
+    Set<String> existingWinners = new HashSet<>(winnerRepository.getWinners(eventId));
+    long remaining = stock - existingWinners.size();
 
     List<String> winnersToInsert = new ArrayList<>();
-    List<String> losers = new ArrayList<>();
+    Set<String> batchWinners = new HashSet<>();
+    Set<String> losers = new LinkedHashSet<>();
 
     for (ApplyMessage msg : messages) {
-      if (remaining > 0 && !winnersToInsert.contains(msg.userId())) {
-        winnersToInsert.add(msg.userId());
+      String userId = msg.userId();
+
+      // 이미 당첨된 사용자의 중복 메시지 — 재고 소모 없이 건너뛴다
+      if (existingWinners.contains(userId) || batchWinners.contains(userId)) {
+        continue;
+      }
+
+      if (remaining > 0) {
+        winnersToInsert.add(userId);
+        batchWinners.add(userId);
         remaining--;
       } else {
-        losers.add(msg.userId());
+        losers.add(userId);
       }
     }
 

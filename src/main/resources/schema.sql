@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS winner (
     id         BIGSERIAL    PRIMARY KEY,
     event_id   VARCHAR(64)  NOT NULL,
     user_id    VARCHAR(64)  NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_winner_event_user UNIQUE (event_id, user_id)
 );
 
@@ -12,5 +12,5 @@ CREATE TABLE IF NOT EXISTS apply_log (
     id         BIGSERIAL    PRIMARY KEY,
     event_id   VARCHAR(64)  NOT NULL,
     user_id    VARCHAR(64)  NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT now()
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
