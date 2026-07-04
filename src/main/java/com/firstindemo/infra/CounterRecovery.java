@@ -35,7 +35,7 @@ public class CounterRecovery implements ApplicationRunner {
     for (Map<String, Object> row : rows) {
       String eventId = (String) row.get("event_id");
       long count = ((Number) row.get("cnt")).longValue();
-      hz.getMap("gate-counter").put(eventId, count);
+      CacheName.GATE_COUNTER.getMap(hz).put(eventId, count);
       log.info("게이트 카운터 복구 완료: eventId={}, count={}", eventId, count);
     }
 

@@ -8,6 +8,7 @@ import java.util.List;
 /**
  * Hazelcast 관련 외부 설정 프로퍼티.
  * application.yaml의 {@code firstin.hazelcast} 하위 값들과 바인딩된다.
+ * 캐시 맵 이름은 설정이 아니라 {@link CacheName}에서 관리한다.
  */
 @ConfigurationProperties(prefix = "firstin.hazelcast")
 public record HazelcastProperties(
@@ -18,24 +19,12 @@ public record HazelcastProperties(
   List<String> members,
 
   @DefaultValue
-  ResultCache resultCache,
-
-  @DefaultValue
-  GateCounter gateCounter
+  ResultCache resultCache
 ) {
 
   public record ResultCache(
-    @DefaultValue("result-cache")
-    String mapName,
-
     @DefaultValue("600")
     int ttlSeconds
-  ) {
-  }
-
-  public record GateCounter(
-    @DefaultValue("gate-counter")
-    String mapName
   ) {
   }
 }

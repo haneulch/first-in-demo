@@ -2,6 +2,7 @@ package com.firstindemo.result;
 
 import com.firstindemo.code.Status;
 import com.firstindemo.event.EventService;
+import com.firstindemo.infra.CacheName;
 import com.firstindemo.judge.WinnerRepository;
 import com.firstindemo.result.message.ResultResponse;
 import com.hazelcast.core.HazelcastInstance;
@@ -100,7 +101,7 @@ class ResultServiceFallbackTest {
   }
 
   private IMap<String, String> cache() {
-    return hz.getMap("result-cache");
+    return CacheName.RESULT_CACHE.getMap(hz);
   }
 
   private List<String> users(int count) {

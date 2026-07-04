@@ -5,7 +5,7 @@ set -euo pipefail
 BASE_URL="${BASE_URL:-http://localhost:8080}"
 EVENT_ID="${1:-demo-$(date +%s)}"
 STOCK=100
-TOTAL=1000
+TOTAL=10000
 CONCURRENCY=200
 
 echo "▶ 이벤트 생성 (eventId=${EVENT_ID}, 당첨자 수=${STOCK})"

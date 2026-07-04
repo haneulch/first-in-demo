@@ -2,6 +2,7 @@ package com.firstindemo.result;
 
 import com.firstindemo.code.Status;
 import com.firstindemo.event.EventService;
+import com.firstindemo.infra.CacheName;
 import com.firstindemo.judge.WinnerRepository;
 import com.firstindemo.result.dto.EventStatus;
 import com.firstindemo.result.dto.EventWinner;
@@ -26,7 +27,7 @@ public class ResultService {
   public ResultService(HazelcastInstance hz,
                        WinnerRepository winnerRepository,
                        EventService eventService) {
-    this.resultCache = hz.getMap("result-cache");
+    this.resultCache = CacheName.RESULT_CACHE.getMap(hz);
     this.winnerRepository = winnerRepository;
     this.eventService = eventService;
   }

@@ -2,6 +2,7 @@ package com.firstindemo.apply;
 
 import com.firstindemo.event.EventService;
 import com.firstindemo.exception.BusinessException;
+import com.firstindemo.infra.CacheName;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +24,7 @@ public class AdmissionGate {
   public AdmissionGate(HazelcastInstance hz,
                        EventService eventService,
                        @Value("${firstin.gate-multiplier}") int multiplier) {
-    this.counterMap = hz.getMap("gate-counter");
+    this.counterMap = CacheName.GATE_COUNTER.getMap(hz);
     this.eventService = eventService;
     this.multiplier = multiplier;
   }

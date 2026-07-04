@@ -1,6 +1,7 @@
 package com.firstindemo.judge;
 
 import com.firstindemo.event.EventService;
+import com.firstindemo.infra.CacheName;
 import com.firstindemo.messaging.ApplyMessage;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -32,7 +33,7 @@ public class JudgeService {
                       HazelcastInstance hz) {
     this.winnerRepository = winnerRepository;
     this.eventService = eventService;
-    this.resultCache = hz.getMap("result-cache");
+    this.resultCache = CacheName.RESULT_CACHE.getMap(hz);
   }
 
   /**

@@ -57,11 +57,11 @@ class CounterRecoveryTest {
     insertApplyLogs(eventId, GATE_LIMIT);
 
     // 재시작 모사: 인메모리 카운터 유실
-    hz.getMap("gate-counter").remove(eventId);
+    CacheName.GATE_COUNTER.getMap(hz).remove(eventId);
 
     counterRecovery.run(null);
 
-    assertThat(hz.getMap("gate-counter").get(eventId))
+    assertThat(CacheName.GATE_COUNTER.getMap(hz).get(eventId))
       .as("복구된 카운터 값")
       .isEqualTo((long) GATE_LIMIT);
 
@@ -78,7 +78,7 @@ class CounterRecoveryTest {
     eventService.create(eventId, STOCK);
     insertApplyLogs(eventId, GATE_LIMIT - 1);
 
-    hz.getMap("gate-counter").remove(eventId);
+    CacheName.GATE_COUNTER.getMap(hz).remove(eventId);
 
     counterRecovery.run(null);
 

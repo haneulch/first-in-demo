@@ -30,14 +30,16 @@ public class HazelcastConfig {
     join.getTcpIpConfig().setEnabled(true);
     props.members().forEach(member -> join.getTcpIpConfig().addMember(member));
 
-    // 결과 캐시 맵
-    MapConfig resultCacheMap = new MapConfig(props.resultCache().mapName());
+    // 결과 캐시 맵 — TTL 적용
+    MapConfig resultCacheMap = new MapConfig(CacheName.RESULT_CACHE.getMapName());
     resultCacheMap.setTimeToLiveSeconds(props.resultCache().ttlSeconds());
     config.addMapConfig(resultCacheMap);
 
     // 게이트 카운터 맵
-    MapConfig gateCounterMap = new MapConfig(props.gateCounter().mapName());
-    config.addMapConfig(gateCounterMap);
+    config.addMapConfig(new MapConfig(CacheName.GATE_COUNTER.getMapName()));
+
+    // 이벤트 재고(stock) 캐시 맵
+    config.addMapConfig(new MapConfig(CacheName.EVENT_STOCK.getMapName()));
 
     return config;
   }

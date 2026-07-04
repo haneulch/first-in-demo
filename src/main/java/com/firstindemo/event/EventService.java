@@ -2,6 +2,7 @@ package com.firstindemo.event;
 
 import com.firstindemo.exception.BusinessException;
 import com.firstindemo.exception.code.ErrorCode;
+import com.firstindemo.infra.CacheName;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.springframework.dao.DuplicateKeyException;
@@ -22,7 +23,7 @@ public class EventService {
 
   public EventService(EventRepository eventRepository, HazelcastInstance hz) {
     this.eventRepository = eventRepository;
-    this.stockCache = hz.getMap("event-stock");
+    this.stockCache = CacheName.EVENT_STOCK.getMap(hz);
   }
 
   /**
