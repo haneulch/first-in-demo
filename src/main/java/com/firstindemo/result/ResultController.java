@@ -1,6 +1,7 @@
 package com.firstindemo.result;
 
-import com.firstindemo.result.message.EventStatus;
+import com.firstindemo.result.dto.EventStatus;
+import com.firstindemo.result.dto.EventWinner;
 import com.firstindemo.result.message.ResultResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 결과 조회 API.
@@ -26,6 +29,12 @@ public class ResultController {
     @RequestParam String userId) {
     ResultResponse response = resultService.getResult(eventId, userId);
     return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/events/{eventId}/winners")
+  public ResponseEntity<List<EventWinner>> winners(@PathVariable String eventId) {
+    List<EventWinner> winners = resultService.getWinners(eventId);
+    return ResponseEntity.ok(winners);
   }
 
   @GetMapping("/events/{eventId}/status")

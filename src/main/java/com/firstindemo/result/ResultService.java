@@ -2,12 +2,15 @@ package com.firstindemo.result;
 
 import com.firstindemo.code.Status;
 import com.firstindemo.judge.WinnerRepository;
-import com.firstindemo.result.message.EventStatus;
+import com.firstindemo.result.dto.EventStatus;
+import com.firstindemo.result.dto.EventWinner;
 import com.firstindemo.result.message.ResultResponse;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * 결과 조회 서비스.
@@ -64,6 +67,18 @@ public class ResultService {
 
     // 아직 판정 미완료
     return ResultResponse.pending(3);
+  }
+
+
+  /**
+   * 이벤트 당첨자 조회
+   *
+   * @param eventId 이벤트 ID
+   * @return 현재 당첨자
+   */
+  public List<EventWinner> getWinners(String eventId) {
+    List<String> winners = winnerRepository.getWinners(eventId);
+    return EventWinner.of(winners);
   }
 
   /**

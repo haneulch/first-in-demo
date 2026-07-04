@@ -42,6 +42,17 @@ public class WinnerRepository {
   }
 
   /**
+   * 현재 당첨자 조회.
+   */
+  public List<String> getWinners(String eventId) {
+    return jdbc.queryForList(
+      "SELECT user_id FROM winner WHERE event_id = ?",
+      String.class,
+      eventId
+    );
+  }
+
+  /**
    * 현재 당첨자 수 조회.
    */
   public long countWinners(String eventId) {
