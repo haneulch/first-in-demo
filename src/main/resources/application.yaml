@@ -1,3 +1,57 @@
 spring:
   application:
     name: FirstInDemo
+
+  # --- DataSource ---
+  datasource:
+    url: jdbc:postgresql://localhost:5432/firstin
+    username: firstin
+    password: firstin
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+  # --- RabbitMQ ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+  # --- Spring Cloud Stream ---
+  cloud:
+    function:
+      definition: applyIn
+    stream:
+      bindings:
+        applyOut-out-0:
+          destination: apply-queue
+        applyIn-in-0:
+          destination: apply-queue
+          group: judge-worker
+          consumer:
+            batch-mode: true
+            max-attempts: 1
+      rabbit:
+        bindings:
+          applyIn-in-0:
+            consumer:
+              single-active-consumer: true
+              prefetch: 300
+              enable-batching: true
+              batch-size: 300
+
+# --- 이벤트 설정 ---
+firstin:
+  stock: 100
+  gate-multiplier: 3
+
+  # --- Hazelcast 설정 ---
+  hazelcast:
+    instance-name: firstin-hz
+    members:
+      - 127.0.0.1
+    result-cache:
+      map-name: result-cache
+      ttl-seconds: 600
+    gate-counter:
+      map-name: gate-counter
